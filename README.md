@@ -28,6 +28,7 @@ Given the following table:
 the following code will save the table to an Excel spreadsheet:
 
 ```
+import xlsxwriter
 
 workbook = xlsxwriter.Workbook('rich_strings.xlsx')
 worksheet = workbook.add_worksheet()
