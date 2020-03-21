@@ -30,11 +30,12 @@ the following code will save the table to an Excel spreadsheet:
 ```
 import xlsxwriter
 
-workbook = xlsxwriter.Workbook('rich_strings.xlsx')
+workbook = xlsxwriter.Workbook('table.xlsx')
 worksheet = workbook.add_worksheet()
 
+html = '<table above>'
 p = HTMLTable2Excel(workbook, worksheet)                                                                
-p.feed(html_string)
+p.feed(html)
 
 workbook.close()
 ```
