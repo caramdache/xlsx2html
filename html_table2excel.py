@@ -1,5 +1,4 @@
 from html.parser import HTMLParser
-import xlsxwriter
 
 class HTMLTable2Excel(HTMLParser):
     def __init__(
