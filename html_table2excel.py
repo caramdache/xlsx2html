@@ -27,7 +27,9 @@ class HTMLTable2Excel(HTMLParser):
             self.td = True
             self.handle_span(attrs)
         elif tag == 'mark':
-            color = attrs[0][1]
+            color = 'black'
+            for name, value in attrs:
+                color = value if name in ['class', 'color'] else 'black'
             self.format['font_color'] = color
         elif tag == 'b':
             self.format['bold'] = True
