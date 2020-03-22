@@ -19,11 +19,13 @@ class HTMLTable2Excel(HTMLParser):
 
         self.td = False
         self.cell = []
+        self.spans = {}
         self.format = {}
 
     def handle_starttag(self, tag, attrs):
         if tag in ['th', 'td']:
             self.td = True
+            self.handle_span(attrs)
         elif tag == 'mark':
             color = attrs[0][1]
             self.format['font_color'] = color
@@ -35,6 +37,20 @@ class HTMLTable2Excel(HTMLParser):
             self.format['underline'] = True
         elif tag == 's':
             self.format['font_strikeout'] = True
+
+    def handle_span(self, attrs):
+        rowspan = colspan = None
+        for name, value in attrs:
+            rowspan = int(value) if name == 'rowspan' else rowspan
+            colspan = int(value) if name == 'colspan' else colspan
+
+        if rowspan:
+            colspan = colspan or 1
+        if colspan:
+            rowspan = rowspan or 1
+
+        if rowspan or colspan:
+            self.spans[self.col] = (rowspan, colspan, 'after')
 
     def handle_data(self, data):
         if self.td:
@@ -54,19 +70,47 @@ class HTMLTable2Excel(HTMLParser):
             self.handle_data(self.unescape('&#{};'.format(name)))
 
     def handle_endtag(self, tag):
-        if tag in ['td', 'th']:
-            if len(self.cell) > 2:
-                self.worksheet.write_rich_string(self.row, self.col, *self.cell)
-            elif len(self.cell) == 2:
-                self.worksheet.write_string(self.row, self.col, self.cell[1], self.cell[0])
-            else:
-                self.worksheet.write_string(self.row, self.col, self.cell[0])
+        if tag == 'tr':
+            self.handle_tr()
+        elif tag in ['td', 'th']:
+            self.handle_td()
 
-            self.cell = []
-            self.td = False
+    def handle_tr(self):
+        self.worksheet.set_column(self.row, self.col, 15)
+        self.row += 1
+        self.col = 0
+
+    def handle_td(self):
+        #import pudb; pu.db
+        cell = (self.row, self.col)
+        rowspan, colspan, jump = self.spans.get(self.col, (None, None, None))
+        if rowspan is not None:
+            self.spans[self.col] = (rowspan - 1, colspan, 'before')
+            if rowspan == 1:
+                del self.spans[self.col]
+
+        if jump == 'after':
+            self.worksheet.merge_range(
+                self.row, self.col,
+                self.row + rowspan - 1, self.col + colspan - 1,
+                'dummy'
+            )
+            self.write_td()
+            self.col += colspan
+        elif jump == 'before':
+            self.col += colspan
+            self.write_td()
+        else:
+            self.write_td()
             self.col += 1
 
-        elif tag == 'tr':
-            self.worksheet.set_column(self.row, self.col, 20)
-            self.row += 1
-            self.col = 0
+        self.cell = []
+        self.td = False
+
+    def write_td(self):
+        if len(self.cell) > 2:
+            self.worksheet.write_rich_string(self.row, self.col, *self.cell)
+        elif len(self.cell) == 2:
+            self.worksheet.write_string(self.row, self.col, self.cell[1], self.cell[0])
+        else:
+            self.worksheet.write_string(self.row, self.col, self.cell[0])
