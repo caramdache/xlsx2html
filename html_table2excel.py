@@ -78,7 +78,7 @@ class HTMLTable2Excel(HTMLParser):
             self.handle_td()
 
     def handle_tr(self):
-        # There will be some hanging spans, if there was not <td/> after the last colspan.
+        # There will be hanging spans, if there was no <td/> after the last colspan.
         rowspan, colspan, jump = self.perform_jump()
 
         self.row += 1
