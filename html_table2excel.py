@@ -18,8 +18,8 @@ class HTMLTable2Excel(HTMLParser):
         self.parse_html_entities = decode_html_entities
 
         self.td = False
-        self.cell = []
         self.spans = {}
+        self.cell = []
         self.format = {}
 
     def handle_starttag(self, tag, attrs):
