@@ -2,13 +2,13 @@
 
 Export an HTLM table to Excel. Supports the following features:
 
-- `table`
-- `rowspan` and `colspan`
-- `b` (bold)
-- `i` (italics)
-- `u` (underline)
-- `s` (strikethrough)
-- `mark` (mark)
+- `<table>`
+- `<td rowspan="2" colspan="3>`
+- `<b>` (bold)
+- `<i>` (italics)
+- `<u>` (underline)
+- `<s>` (strikethrough)
+- `<mark color="red">` (mark)
 
 ## How to use
 
