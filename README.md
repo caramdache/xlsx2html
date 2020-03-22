@@ -45,6 +45,8 @@ workbook.close()
 </table>
 ```
 
+![Alt text](example1.png?raw=true "Example 1")
+
 ## Example 2 (rowspan and colspan)
 
 ```
@@ -58,6 +60,40 @@ workbook.close()
     </tbody>
 </table>
 ```
+
+![Alt text](example2.png?raw=true "Example 2")
+
+## Example 3
+
+```
+<table class='table table-bordered table-hover table-striped'>
+  <tr>
+    <th ><p>Main</p></td>
+    <th ><p>Claim</p></td>
+    <th ><p>Text</p></td>
+  </tr>
+  <tr>
+    <td colspan='1' rowspan='4'><p>Main</p></td>
+    <td colspan='1' rowspan='4'><p>1</p></td>
+    <td ><p>Essai de texte</p></td>
+  </tr>
+  <tr>
+    <td ><p><b>3.2.1 </b><b><u>Section</u></b></p><p>Essai <mark color='#FF0000'>numéro</mark> <mark color='#00B0F0'>deux</mark></p></td>
+  </tr>
+  <tr>
+    <td ><p>*nil*</p></td>
+  </tr>
+  <tr>
+    <td ><p>*nil*</p></td>
+  </tr>
+  <tr>
+    <td ><p>11</p></td>
+    <td ><p>13</p></td>
+  </tr>
+</table>
+```
+
+![Alt text](example3.png?raw=true "Example 3")
 
 ## Credits
 
