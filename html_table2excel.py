@@ -81,8 +81,6 @@ class HTMLTable2Excel(HTMLParser):
         self.col = 0
 
     def handle_td(self):
-        #import pudb; pu.db
-        cell = (self.row, self.col)
         rowspan, colspan, jump = self.spans.get(self.col, (None, None, None))
         if rowspan is not None:
             self.spans[self.col] = (rowspan - 1, colspan, 'before')
