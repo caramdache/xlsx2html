@@ -78,36 +78,52 @@ class HTMLTable2Excel(HTMLParser):
             self.handle_td()
 
     def handle_tr(self):
-        self.worksheet.set_column(self.row, self.col, 15)
+        # There will be some hanging spans, if there was not <td/> after the last colspan.
+        rowspan, colspan, jump = self.perform_jump()
+
         self.row += 1
         self.col = 0
 
     def handle_td(self):
-        rowspan, colspan, jump = self.spans.get(self.col, (None, None, None))
-        if rowspan is not None:
-            self.spans[self.col] = (rowspan - 1, colspan, 'before')
-            if rowspan == 1:
-                del self.spans[self.col]
+        # Handle consecutive colspans.
+        rowspan, colspan, jump = self.perform_jump()
 
         if jump == 'after':
+            # Process the cell that starts the rowspan/colspan.
             self.worksheet.merge_range(
                 self.row, self.col,
                 self.row + rowspan - 1, self.col + colspan - 1,
                 'dummy'
             )
-            self.write_td()
+            self.write_cell()
             self.col += colspan
-        elif jump == 'before':
-            self.col += colspan
-            self.write_td()
         else:
-            self.write_td()
+            # Process non rowspan/colspan cells
+            self.write_cell()
             self.col += 1
 
         self.cell = []
         self.td = False
 
-    def write_td(self):
+    def perform_jump(self):
+        # Handle successive colspans
+        jump = 'before'
+        while jump == 'before':
+            rowspan, colspan, jump = self.spans.get(self.col, (None, None, None))
+
+            # Mark this row as processed
+            if rowspan is not None:
+                self.spans[self.col] = (rowspan - 1, colspan, 'before')
+                if rowspan == 1:
+                    del self.spans[self.col]
+
+            # Skip colspan columns
+            if jump == 'before':
+                self.col += colspan
+
+        return (rowspan, colspan, jump)
+
+    def write_cell(self):
         if len(self.cell) > 2:
             self.worksheet.write_rich_string(self.row, self.col, *self.cell)
         elif len(self.cell) == 2:
