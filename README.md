@@ -1,11 +1,31 @@
 # html_table2excel
-Export an HTLM table to Excel.
 
-I've been wanting something simple to export an HTML with formatting to Excel and here is what I have come up with.
+Export an HTLM table to Excel. Supports the following features:
 
-## Example
+- `table`
+- `rowspan` and `colspan`
+- `b` (bold)
+- `i` (italics)
+- `u` (underline)
+- `s` (strikethrough)
+- `mark` (mark)
 
-Given the following table:
+## How to use
+
+```
+import xlsxwriter
+
+workbook = xlsxwriter.Workbook('table.xlsx')
+worksheet = workbook.add_worksheet()
+
+html = '... some HTML table...'
+p = HTMLTable2Excel(workbook, worksheet)                                                                
+p.feed(html)
+
+workbook.close()
+```
+
+## Example 1 (rich text)
 
 ```
 <table>
@@ -25,19 +45,18 @@ Given the following table:
 </table>
 ```
 
-the following code will save the table to an Excel spreadsheet:
+## Example 2 (rowspan and colspan)
 
 ```
-import xlsxwriter
-
-workbook = xlsxwriter.Workbook('table.xlsx')
-worksheet = workbook.add_worksheet()
-
-html = '<table above>'
-p = HTMLTable2Excel(workbook, worksheet)                                                                
-p.feed(html)
-
-workbook.close()
+<table>
+    <tbody>
+        <tr><td>a</td><td>b</td><td>c</td><td>d</td><td>e</td></tr>
+        <tr><td>a</td><td rowspan="3" colspan="3">A <mark class="red">third</mark> <mark class="blue">enourmous</mark> string</td><td>e</td></tr>
+        <tr><td>a</td><td>e</td></tr>
+        <tr><td>a</td><td>e</td></tr>
+        <tr><td>a</td><td>b</td><td>c</td><td>d</td><td>e</td></tr>
+    </tbody>
+</table>
 ```
 
 ## Credits
