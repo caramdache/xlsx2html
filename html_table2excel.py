@@ -1,5 +1,3 @@
-from html.parser import HTMLParser
-
 class HTMLTable2Excel(HTMLParser):
     def __init__(
         self,
@@ -19,6 +17,7 @@ class HTMLTable2Excel(HTMLParser):
 
         self.td = False
         self.spans = {}
+        self.merged_cells = {}
         self.cell = []
         self.format = {}
 
@@ -29,16 +28,19 @@ class HTMLTable2Excel(HTMLParser):
         elif tag == 'mark':
             color = 'black'
             for name, value in attrs:
-                color = value if name in ['class', 'color'] else 'black'
+                if name == 'class':
+                    color = COLORS[value]
+                if name == 'color':
+                    color = value
             self.format['font_color'] = color
         elif tag == 'b':
-            self.format['bold'] = True
+            self.format['bold'] = 1
         elif tag == 'i':
-            self.format['italic'] = True
+            self.format['italic'] = 1
         elif tag == 'u':
-            self.format['underline'] = True
+            self.format['underline'] = 1
         elif tag == 's':
-            self.format['font_strikeout'] = True
+            self.format['font_strikeout'] = 1
 
     def handle_span(self, attrs):
         rowspan = colspan = None
@@ -52,7 +54,7 @@ class HTMLTable2Excel(HTMLParser):
             rowspan = rowspan or 1
 
         if rowspan or colspan:
-            self.spans[self.col] = (rowspan, colspan, 'after')
+            self.spans[self.col] = (rowspan, colspan, 'jump-after-write')
 
     def handle_data(self, data):
         if self.td:
@@ -62,14 +64,20 @@ class HTMLTable2Excel(HTMLParser):
                 self.cell.append(f"{striped_data} ")
 
     def handle_format(self):
+        # Center merged cells
+        # if self.is_merged():
+        #     self.format['align'] = 'center'
+        #     self.format['valign'] = 'vcenter'
+        
         if len(self.format) >= 1:
             format = self.workbook.add_format(self.format)
             self.cell.append(format)
-            self.format = {}
+
+        self.format = {}
 
     def handle_charref(self, name):
         if self.parse_html_entities:
-            self.handle_data(self.unescape('&#{};'.format(name)))
+            self.handle_data(self.unescape(f"&#{name};"))
 
     def handle_endtag(self, tag):
         if tag == 'tr':
@@ -78,7 +86,7 @@ class HTMLTable2Excel(HTMLParser):
             self.handle_td()
 
     def handle_tr(self):
-        # There are hanging spans, if there is no <td/> after the last colspan.
+        # Handle colspans followed immediately by </tr>.
         rowspan, colspan, jump = self.perform_jump()
 
         self.row += 1
@@ -88,13 +96,15 @@ class HTMLTable2Excel(HTMLParser):
         # Handle consecutive colspans.
         rowspan, colspan, jump = self.perform_jump()
 
-        if jump == 'after':
+        if jump == 'jump-after-write':
             # Process the cell that starts the rowspan/colspan.
             self.worksheet.merge_range(
                 self.row, self.col,
                 self.row + rowspan - 1, self.col + colspan - 1,
-                'dummy'
+                ''
             )
+            self.merged_cells[(self.row, self.col)] = True
+
             self.write_cell()
             self.col += colspan
         else:
@@ -102,31 +112,58 @@ class HTMLTable2Excel(HTMLParser):
             self.write_cell()
             self.col += 1
 
-        self.cell = []
         self.td = False
 
     def perform_jump(self):
         # Handle successive colspans
-        jump = 'before'
-        while jump == 'before':
+        jump = 'jump-before-write'
+        while jump == 'jump-before-write':
             rowspan, colspan, jump = self.spans.get(self.col, (None, None, None))
 
             # Mark this row as processed
             if rowspan is not None:
-                self.spans[self.col] = (rowspan - 1, colspan, 'before')
+                self.spans[self.col] = (rowspan - 1, colspan, 'jump-before-write')
                 if rowspan == 1:
+                    # All colspans have been processed.
                     del self.spans[self.col]
 
             # Skip colspan columns
-            if jump == 'before':
+            if jump == 'jump-before-write':
                 self.col += colspan
 
         return (rowspan, colspan, jump)
 
     def write_cell(self):
-        if len(self.cell) > 2:
-            self.worksheet.write_rich_string(self.row, self.col, *self.cell)
-        elif len(self.cell) == 2:
-            self.worksheet.write_string(self.row, self.col, self.cell[1], self.cell[0])
+        # Prepare to handle display of long strings.
+        wrap = self.workbook.add_format({'text_wrap': 1, 'valign': 'top'})
+
+        count = len(self.cell)
+        if count > 2:
+            self.cell.append(wrap)
+            res = self.worksheet.write_rich_string(self.row, self.col, *self.cell)
+
+        elif count == 2:
+            # Handle the case of 2 strings in a row. Work around write_rich_string.
+            if type(self.cell[0]) == str:
+                self.cell = [wrap, f"{self.cell[0]}\n{self.cell[1]}"]
+
+            format, data = self.cell
+            format.set_text_wrap()
+            format.set_align('top')
+            res = self.worksheet.write_string(self.row, self.col, data, format)
+
+        elif count == 1:
+            wrap = self.workbook.add_format({'text_wrap': 1, 'valign': 'top'})
+            res = self.worksheet.write_string(self.row, self.col, self.cell[0], wrap)
+
         else:
-            self.worksheet.write_string(self.row, self.col, self.cell[0])
+            # Tag was empy, no action.
+            res = 0
+
+        if res < 0:
+            print(f"{res}: {self.cell}\n")
+
+        self.cell = []
+
+    def is_merged(self):
+        return (self.row, self.col) in self.merged_cells
