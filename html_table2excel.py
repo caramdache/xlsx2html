@@ -15,16 +15,42 @@ class HTMLTable2Excel(HTMLParser):
 
         self.parse_html_entities = decode_html_entities
 
-        self.td = False
         self.spans = {}
         self.merged_cells = {}
+
         self.cell = []
         self.format = {}
+        self.mark_color = None
+        self.bold = False
+        self.italic = False
+        self.underline = False
+        self.strike = False
+        self.li = False
+        self.td = False
 
     def handle_starttag(self, tag, attrs):
         if tag in ['th', 'td']:
             self.td = True
             self.handle_span(attrs)
+
+        elif tag == 'br':
+            self.cell.append("\n")
+
+        elif tag == 'li':
+            self.li = True
+
+        elif tag in ['b', 'strong']:
+            self.bold = True
+
+        elif tag in ['i', 'em', 'blockquote', 'code']:
+            self.italic = True
+
+        elif tag == 'u':
+            self.underline = True
+
+        elif tag in ['s', 'strike']:
+            self.strike = True
+
         elif tag == 'mark':
             color = 'black'
             for name, value in attrs:
@@ -32,15 +58,8 @@ class HTMLTable2Excel(HTMLParser):
                     color = COLORS[value]
                 if name == 'color':
                     color = value
-            self.format['font_color'] = color
-        elif tag == 'b':
-            self.format['bold'] = 1
-        elif tag == 'i':
-            self.format['italic'] = 1
-        elif tag == 'u':
-            self.format['underline'] = 1
-        elif tag == 's':
-            self.format['font_strikeout'] = 1
+
+            self.mark_color = color
 
     def handle_span(self, attrs):
         rowspan = colspan = None
@@ -57,11 +76,29 @@ class HTMLTable2Excel(HTMLParser):
             self.spans[self.col] = (rowspan, colspan, 'jump-after-write')
 
     def handle_data(self, data):
-        if self.td:
-            striped_data = data.strip()
-            if len(striped_data) > 0:
+        if self.bold:
+            self.format['bold'] = 1
+
+        if self.italic:
+            self.format['italic'] = 1
+
+        if self.underline:
+            self.format['underline'] = 1
+
+        if self.strike:
+            self.format['font_strikeout'] = 1
+
+        if self.mark_color:
+            self.format['font_color'] = self.mark_color
+
+
+        if self.li:
+            self.cell.append(f"\n- {data}")
+
+        elif self.td:
+            if len(data) > 0:
                 self.handle_format()
-                self.cell.append(f"{striped_data} ")
+                self.cell.append(data)
 
     def handle_format(self):
         # Center merged cells
@@ -72,8 +109,7 @@ class HTMLTable2Excel(HTMLParser):
         if len(self.format) >= 1:
             format = self.workbook.add_format(self.format)
             self.cell.append(format)
-
-        self.format = {}
+            self.format = {}
 
     def handle_charref(self, name):
         if self.parse_html_entities:
@@ -82,8 +118,30 @@ class HTMLTable2Excel(HTMLParser):
     def handle_endtag(self, tag):
         if tag == 'tr':
             self.handle_tr()
+
         elif tag in ['td', 'th']:
             self.handle_td()
+
+        elif tag in ['ul', 'ol']:
+            self.cell.append("\n")
+
+        elif tag in ['li']:
+            self.li = False
+
+        elif tag in ['b', 'strong']:
+            self.bold = False
+
+        elif tag in ['i', 'em', 'blockquote', 'code']:
+            self.italic = False
+
+        elif tag == 'u':
+            self.underline = False
+
+        elif tag in ['s', 'strike']:
+            self.strike = False
+
+        elif tag == 'mark':
+            self.mark_color = None
 
     def handle_tr(self):
         # Handle colspans followed immediately by </tr>.
@@ -113,6 +171,7 @@ class HTMLTable2Excel(HTMLParser):
             self.col += 1
 
         self.td = False
+        self.format = {}
 
     def perform_jump(self):
         # Handle successive colspans
@@ -124,7 +183,7 @@ class HTMLTable2Excel(HTMLParser):
             if rowspan is not None:
                 self.spans[self.col] = (rowspan - 1, colspan, 'jump-before-write')
                 if rowspan == 1:
-                    # All colspans have been processed.
+                    # All colspans have been performed.
                     del self.spans[self.col]
 
             # Skip colspan columns
