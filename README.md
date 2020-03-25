@@ -114,4 +114,4 @@ wb.worksheets.each { |ws|
 
 ## Credits
 
-This was inspired by https://github.com/schmijos/html-table-parser-python3
+html_table2excel was initially inspired by https://github.com/schmijos/html-table-parser-python3.
