@@ -1,4 +1,4 @@
-# HTML Table to Excel (and vice-versa)
+# Excel to HTML (and back!)
 
 Export an HTLM table to Excel, or export an Excel table to HTML.
 
