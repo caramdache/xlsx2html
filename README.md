@@ -12,7 +12,7 @@ The following features are supported:
 - `<s>` (strikethrough)
 - `<mark color="red">` (mark)
 
-## html_table2excel
+## HTML table to .xlsx
 
 ```
 import xlsxwriter
@@ -28,7 +28,7 @@ p.feed(html)
 workbook.close()
 ```
 
-## excel2html_table
+## .xlsx to HTML table
 
 ```
 require 'rubyXL'
@@ -39,6 +39,7 @@ wb = RubyXL::Parser.parse('some excel file.xlsx')
 
 wb.worksheets.each { |ws|
     worksheet_to_html(ws)
+}
 ```
 
 ## Example 1 (rich text)
