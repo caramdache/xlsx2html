@@ -1,6 +1,8 @@
-# html_table2excel
+# HTML Table to Excel (and Excel to HTML Table)
 
-Export an HTLM table to Excel. Supports the following features:
+Export an HTLM table to Excel, and vice-versa.
+
+The following features are supported:
 
 - `<table>`
 - `<td rowspan="2" colspan="3>`
@@ -10,7 +12,7 @@ Export an HTLM table to Excel. Supports the following features:
 - `<s>` (strikethrough)
 - `<mark color="red">` (mark)
 
-## How to use
+## html_table2excel
 
 ```
 import xlsxwriter
@@ -23,6 +25,12 @@ p = HTMLTable2Excel(workbook, worksheet)
 p.feed(html)
 
 workbook.close()
+```
+
+## excel2html_table
+
+```
+
 ```
 
 ## Example 1 (rich text)
