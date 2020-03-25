@@ -1,6 +1,6 @@
-# HTML Table to Excel (and Excel to HTML Table)
+# HTML Table to Excel (and vice-versa)
 
-Export an HTLM table to Excel, and vice-versa.
+Export an HTLM table to Excel, or export an Excel table to HTML.
 
 The following features are supported:
 
@@ -16,6 +16,7 @@ The following features are supported:
 
 ```
 import xlsxwriter
+import html_table2excel.py
 
 workbook = xlsxwriter.Workbook('table.xlsx')
 worksheet = workbook.add_worksheet()
@@ -30,7 +31,14 @@ workbook.close()
 ## excel2html_table
 
 ```
+require 'rubyXL'
+require 'rubyXL/convenience_methods'
+require './excel2html_table'
 
+wb = RubyXL::Parser.parse('some excel file.xlsx')
+
+wb.worksheets.each { |ws|
+    worksheet_to_html(ws)
 ```
 
 ## Example 1 (rich text)
