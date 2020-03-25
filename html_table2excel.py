@@ -54,8 +54,6 @@ class HTMLTable2Excel(HTMLParser):
         elif tag == 'mark':
             color = 'black'
             for name, value in attrs:
-                if name == 'class':
-                    color = COLORS[value]
                 if name == 'color':
                     color = value
 
@@ -91,7 +89,6 @@ class HTMLTable2Excel(HTMLParser):
         if self.mark_color:
             self.format['font_color'] = self.mark_color
 
-
         if self.li:
             self.cell.append(f"\n- {data}")
 
@@ -101,15 +98,11 @@ class HTMLTable2Excel(HTMLParser):
                 self.cell.append(data)
 
     def handle_format(self):
-        # Center merged cells
-        # if self.is_merged():
-        #     self.format['align'] = 'center'
-        #     self.format['valign'] = 'vcenter'
-        
         if len(self.format) >= 1:
             format = self.workbook.add_format(self.format)
-            self.cell.append(format)
             self.format = {}
+
+            self.cell.append(format)
 
     def handle_charref(self, name):
         if self.parse_html_entities:
@@ -145,7 +138,7 @@ class HTMLTable2Excel(HTMLParser):
 
     def handle_tr(self):
         # Handle colspans followed immediately by </tr>.
-        rowspan, colspan, jump = self.perform_jump()
+        self.perform_jump()
 
         self.row += 1
         self.col = 0
@@ -162,7 +155,7 @@ class HTMLTable2Excel(HTMLParser):
                 ''
             )
             self.merged_cells[(self.row, self.col)] = True
-
+            
             self.write_cell()
             self.col += colspan
         else:
@@ -193,7 +186,6 @@ class HTMLTable2Excel(HTMLParser):
         return (rowspan, colspan, jump)
 
     def write_cell(self):
-        # Prepare to handle display of long strings.
         wrap = self.workbook.add_format({'text_wrap': 1, 'valign': 'top'})
 
         count = len(self.cell)
@@ -202,21 +194,16 @@ class HTMLTable2Excel(HTMLParser):
             res = self.worksheet.write_rich_string(self.row, self.col, *self.cell)
 
         elif count == 2:
-            # Handle the case of 2 strings in a row. Work around write_rich_string.
-            if type(self.cell[0]) == str:
-                self.cell = [wrap, f"{self.cell[0]}\n{self.cell[1]}"]
+            # Work around write_rich_string's limitation using a zero-width-space
+            self.cell = ['\u200b'] + self.cell
 
-            format, data = self.cell
-            format.set_text_wrap()
-            format.set_align('top')
-            res = self.worksheet.write_string(self.row, self.col, data, format)
+            self.cell.append(wrap)
+            res = self.worksheet.write_rich_string(self.row, self.col, *self.cell)
 
         elif count == 1:
-            wrap = self.workbook.add_format({'text_wrap': 1, 'valign': 'top'})
             res = self.worksheet.write_string(self.row, self.col, self.cell[0], wrap)
 
         else:
-            # Tag was empy, no action.
             res = 0
 
         if res < 0:
