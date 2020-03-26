@@ -1,8 +1,26 @@
+COLORS = {
+    'marker-yellow':     '#fdfd77',
+    'marker-green':      '#63f963',
+    'marker-pink':       '#fc7999',
+    'marker-blue':       '#72cdfd',
+
+    'marker-orange':     '#FFC000',
+    'marker-purple':     '#c6a0ff',
+    'marker-brown':      '#bc9a79',
+    'marker-terra-cota': '#999787',
+    'marker-brique':     '#cea1a1',
+    'marker-red':        '#ff4040',
+    'marker-dark-blue':  '#8199b6',
+    'marker-grey':       '#d9d9d9',
+}
+
+
 class HTMLTable2Excel(HTMLParser):
     def __init__(
         self,
         workbook,
         worksheet,
+        default_format={},
         decode_html_entities=False,
     ):
 
@@ -19,7 +37,9 @@ class HTMLTable2Excel(HTMLParser):
         self.merged_cells = {}
 
         self.cell = []
+        self.default_format = default_format
         self.format = {}
+        self.fill_color = None
         self.mark_color = None
         self.bold = False
         self.italic = False
@@ -28,12 +48,18 @@ class HTMLTable2Excel(HTMLParser):
         self.li = False
         self.td = False
 
+    def set_default_font(self):
+        self.format['font_name'] = self.default_format.get('font_name', 'Arial')
+        self.format['font_size'] = self.default_format.get('font_size', 10)
+
     def handle_starttag(self, tag, attrs):
         if tag in ['th', 'td']:
             self.td = True
+            self.fill_color = self.get_style_attr(attrs, 'background-color')
             self.handle_span(attrs)
 
         elif tag == 'br':
+            self.set_default_font()
             self.cell.append("\n")
 
         elif tag == 'li':
@@ -52,12 +78,30 @@ class HTMLTable2Excel(HTMLParser):
             self.strike = True
 
         elif tag == 'mark':
-            color = 'black'
-            for name, value in attrs:
-                if name == 'color':
-                    color = value
+            self.handle_mark(attrs)
 
-            self.mark_color = color
+        elif tag == 'span':
+            self.mark_color = self.get_style_attr(attrs, 'color')
+
+    RE_CCS_SELECTORS = re.compile(r'([^:;\s]+)\s?:\s?([^;\s]+)(?=;)?') 
+
+    def get_style_attr(self, attrs, attr):
+        for name, value in attrs:
+            if name == 'style':
+                for attribute, content in re.findall(self.RE_CCS_SELECTORS, value):
+                    if attribute == attr:
+                        return content
+        return None
+
+    def handle_mark(self, attrs):
+        color = 'black'
+        for name, value in attrs:
+            if name == 'class':
+                color = COLORS[value]
+            if name == 'color':
+                color = value
+
+        self.mark_color = color
 
     def handle_span(self, attrs):
         rowspan = colspan = None
@@ -90,19 +134,21 @@ class HTMLTable2Excel(HTMLParser):
             self.format['font_color'] = self.mark_color
 
         if self.li:
+            self.set_default_font()
             self.cell.append(f"\n- {data}")
 
         elif self.td:
             if len(data) > 0:
+                self.set_default_font()
                 self.handle_format()
                 self.cell.append(data)
 
     def handle_format(self):
         if len(self.format) >= 1:
             format = self.workbook.add_format(self.format)
-            self.format = {}
-
             self.cell.append(format)
+
+            self.format = {}
 
     def handle_charref(self, name):
         if self.parse_html_entities:
@@ -116,6 +162,7 @@ class HTMLTable2Excel(HTMLParser):
             self.handle_td()
 
         elif tag in ['ul', 'ol']:
+            self.set_default_font()
             self.cell.append("\n")
 
         elif tag in ['li']:
@@ -134,6 +181,9 @@ class HTMLTable2Excel(HTMLParser):
             self.strike = False
 
         elif tag == 'mark':
+            self.mark_color = None
+
+        elif tag == 'span':
             self.mark_color = None
 
     def handle_tr(self):
@@ -159,11 +209,12 @@ class HTMLTable2Excel(HTMLParser):
             self.write_cell()
             self.col += colspan
         else:
-            # Process non rowspan/colspan cells
+            # Process other cells
             self.write_cell()
             self.col += 1
 
         self.td = False
+        self.fill_color = None
         self.format = {}
 
     def perform_jump(self):
@@ -186,25 +237,24 @@ class HTMLTable2Excel(HTMLParser):
         return (rowspan, colspan, jump)
 
     def write_cell(self):
-        wrap = self.workbook.add_format({'text_wrap': 1, 'valign': 'top'})
+        cell_format = self.workbook.add_format(self.default_format)
+        if self.fill_color:
+            cell_format.set_bg_color(self.fill_color)
 
         count = len(self.cell)
-        if count > 2:
-            self.cell.append(wrap)
-            res = self.worksheet.write_rich_string(self.row, self.col, *self.cell)
+        if count >= 2:
+            if count == 2:
+                # Work around write_rich_string's limitation. Add an invisible zero-width-space
+                self.cell = ['\u200b'] + self.cell
 
-        elif count == 2:
-            # Work around write_rich_string's limitation using a zero-width-space
-            self.cell = ['\u200b'] + self.cell
-
-            self.cell.append(wrap)
+            self.cell.append(cell_format)
             res = self.worksheet.write_rich_string(self.row, self.col, *self.cell)
 
         elif count == 1:
-            res = self.worksheet.write_string(self.row, self.col, self.cell[0], wrap)
+            res = self.worksheet.write_string(self.row, self.col, self.cell[0], cell_format)
 
         else:
-            res = 0
+            res = self.worksheet.write_blank(self.row, self.col, '', cell_format)
 
         if res < 0:
             print(f"{res}: {self.cell}\n")
