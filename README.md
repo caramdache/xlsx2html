@@ -2,17 +2,21 @@
 
 Export an HTLM table to Excel, or export an Excel table to HTML.
 
-The following features are supported:
+The following elements are fully supported:
 
 - `<table>`
 - `<td rowspan="2" colspan="3>`
-- `<b>` (bold)
-- `<i>` (italics)
+- `<td style="background-color:red">` (background color)
+- `<li>` (list)
+- `<b>` and `<strong> (bold)
+- `<i>`, `<em>`, `<blockquote>` and `<code>` (italics)
 - `<u>` (underline)
-- `<s>` (strikethrough)
+- `<s>` and `<strike>` (strikethrough)
 - `<mark color="red">` (mark)
+- `<span style="color:red">` (span)
+- `<br>`(break)
 
-## HTML table to .xlsx
+## HTML table to Excel (.xlsx)
 
 ```
 import xlsxwriter
@@ -22,13 +26,20 @@ workbook = xlsxwriter.Workbook('table.xlsx')
 worksheet = workbook.add_worksheet()
 
 html = '... some HTML table...'
-p = HTMLTable2Excel(workbook, worksheet)                                                                
+p = HTMLTable2Excel(wb, ws, default_format={
+    'font_name': 'Arial',
+    'font_size': 10,
+    'text_wrap': 1,
+    'valign': 'top',
+    'border': 1,
+    'border_color': '#0000ff',
+})                                                                
 p.feed(html)
 
 workbook.close()
 ```
 
-## .xlsx to HTML table
+## Excel (.xlsx) to HTML table
 
 ```
 require 'rubyXL'
