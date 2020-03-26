@@ -5,32 +5,14 @@ MARKERS = {
     'F79646' => 'marker-orange',
     'E46C0A' => 'marker-orange',
     'FFC000' => 'marker-orange',
-
-    '6600FF' => 'marker-purple',
-    '7030A0' => 'marker-purple',
-    '8064A2' => 'marker-purple',
-    'B3A2C7' => 'marker-purple',
-    'CCC1DA' => 'marker-purple',
+    'E6B9B8' => 'marker-orange',
+    'D99694' => 'marker-orange',
 
     '996633' => 'marker-brown',
     '984807' => 'marker-brown',
+    '948A54' => 'marker-brown',
 
     '4A452A' => 'marker-terra-cota',
-
-    '953735' => 'marker-brique',
-
-    'C00000' => 'marker-red',
-    'FF0000' => 'marker-red',
-
-    '0000FF' => 'marker-blue',
-    '0070C0' => 'marker-blue',
-    '00B0F0' => 'marker-blue',
-    '31859C' => 'marker-blue',
-    '4BACC6' => 'marker-blue',
-    '4F81BD' => 'marker-blue',
-    '558ED5' => 'marker-blue',
-
-    '1F497D' => 'marker-dark-blue',
 
     'FFFF00' => 'marker-yellow',
 
@@ -39,6 +21,49 @@ MARKERS = {
     '009900' => 'marker-green',
     '00B050' => 'marker-green',
     '92D050' => 'marker-green',
+    '9BBB59' => 'marker-green',
+    '77933C' => 'marker-green',
+    '4F6228' => 'marker-green',
+
+    '0000FF' => 'marker-blue',
+    '0070C0' => 'marker-blue',
+    '00B0F0' => 'marker-blue',
+    '31859C' => 'marker-blue',
+    '4BACC6' => 'marker-blue',
+    '4F81BD' => 'marker-blue',
+    '558ED5' => 'marker-blue',
+    'B7DEE8' => 'marker-blue',
+    '93CDDD' => 'marker-blue',
+
+    '1F497D' => 'marker-dark-blue',
+    '376092' => 'marker-dark-blue',
+    '002060' => 'marker-dark-blue',
+    '10253F' => 'marker-dark-blue',
+    '17375E' => 'marker-dark-blue',
+    '215968' => 'marker-dark-blue',
+    '254061' => 'marker-dark-blue',
+
+    '6600FF' => 'marker-purple',
+    '7030A0' => 'marker-purple',
+    '8064A2' => 'marker-purple',
+    'B3A2C7' => 'marker-purple',
+    'CCC1DA' => 'marker-purple',
+    '604A7B' => 'marker-purple',
+
+    'FF66CC' => 'marker-pink',
+    'FF00FF' => 'marker-pink',
+
+    'C00000' => 'marker-red',
+    'FF0000' => 'marker-red',
+    'C0504D' => 'marker-red',
+
+    '953735' => 'marker-brique',
+    '632523' => 'marker-brique',
+
+    '808080' => 'marker-grey',
+    'A6A6A6' => 'marker-grey',
+    'BFBFBF' => 'marker-grey',
+    'D9D9D9' => 'marker-grey',
 }
 
 
@@ -51,7 +76,7 @@ def marker(rgb)
 end
 
 def font_color(cell)
-    # instead of convenience method: cell.font_color, which is buggy
+    # Instead of convenience method: cell.font_color, which is buggy
     cell.get_cell_font.color
 end
 
@@ -64,6 +89,8 @@ def rgb(color, cell)
         color.get_rgb(cell.worksheet.workbook)
     end
 
+    rgb = rgb.upcase unless rgb.nil?
+
     if rgb =~ /^(FF)?000000$/
         nil
     elsif rgb =~ /^(.{2,2})(.{6,6})$/
@@ -74,24 +101,7 @@ def rgb(color, cell)
 end
 
 def worksheet_to_html(worksheet)
-    s = """<!doctype html>
-    <html lang='en'>
-      <head>
-        <!-- Required meta tags -->
-        <meta charset='utf-8'>
-        <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no'>
-
-        <!-- Bootstrap CSS -->
-        <link rel='stylesheet' href='https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css' integrity='sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh' crossorigin='anonymous'>
-
-        <script src='https://code.jquery.com/jquery-3.4.1.slim.min.js' integrity='sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n' crossorigin='anonymous'></script>
-        <script src='https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js' integrity='sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo' crossorigin='anonymous'></script>
-        <script src='https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js' integrity='sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6' crossorigin='anonymous'></script>
-      </head>
-      <body>
-<table class='table table-bordered table-hover table-striped'>
-    <thead>
-    </thead>
+    s = """<table>
     <tbody>
 """
     s << rows_to_html(worksheet)
@@ -99,8 +109,6 @@ def worksheet_to_html(worksheet)
     s << """
     </tbody>
 </table>
-</body>
-</html>
 """
 end
 
@@ -123,13 +131,25 @@ def rows_to_html(worksheet)
 end
 
 def cell_to_html(cell, i, j)
-    s = "<#{i == 0 ? 'th' : 'td'}#{span(cell)}>"
+    s = "<td#{span(cell)}#{fill(cell)}>"
 
     # print("Cell(#{cell.row}, #{cell.column})\n")
-    # s << "<span  style='font-size: 8px;'>(#{cell.row}, #{cell.column})</span><br>\n" 
+    # s << "<span  style='font-size: 8px;'>(#{cell.row}, #{cell.column})</span><br>\n"
+
     s << value_to_html(cell)
 
     s << '</td>'
+end
+
+def fill(cell)
+    color = cell.fill_color
+
+    rgb = rgb(color, cell)
+    if rgb && rgb !~ /FFFFFF/
+        " style='background-color:##{rgb};'"
+    else
+        ''
+    end
 end
 
 def value_to_html(cell)
