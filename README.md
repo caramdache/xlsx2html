@@ -7,7 +7,7 @@ Handles:
 - `<td rowspan="2" colspan="3>`
 - `<td style="background-color:red">` (background color)
 - `<li>` (list)
-- `<b>` and `<strong> (bold)
+- `<b>` and `<strong>` (bold)
 - `<i>`, `<em>`, `<blockquote>` and `<code>` (italics)
 - `<u>` (underline)
 - `<s>` and `<strike>` (strikethrough)
