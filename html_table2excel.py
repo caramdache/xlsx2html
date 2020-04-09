@@ -39,6 +39,8 @@ class HTMLTable2Excel(HTMLParser):
         self.cell = []
         self.default_format = default_format
         self.format = {}
+        self.font_size = None
+        self.text_align = None
         self.fill_color = None
         self.mark_color = None
         self.bold = False
@@ -47,19 +49,25 @@ class HTMLTable2Excel(HTMLParser):
         self.strike = False
         self.li = False
         self.td = False
+        self.skip = False
 
-    def set_default_font(self):
+    def set_font(self):
         self.format['font_name'] = self.default_format.get('font_name', 'Arial')
         self.format['font_size'] = self.default_format.get('font_size', 10)
+
+        if self.font_size is not None and self.font_size != 'text-default':
+            self.format['font_size'] = 20
 
     def handle_starttag(self, tag, attrs):
         if tag in ['th', 'td']:
             self.td = True
+            self.handle_skip(attrs)
+            self.handle_colspan(attrs)
+            self.text_align = self.get_style_attr(attrs, 'text-align')
             self.fill_color = self.get_style_attr(attrs, 'background-color')
-            self.handle_span(attrs)
 
         elif tag == 'br':
-            self.set_default_font()
+            self.set_font()
             self.cell.append("\n")
 
         elif tag == 'li':
@@ -81,7 +89,14 @@ class HTMLTable2Excel(HTMLParser):
             self.handle_mark(attrs)
 
         elif tag == 'span':
-            self.mark_color = self.get_style_attr(attrs, 'color')
+            self.handle_span(attrs)
+
+    def handle_span(self, attrs):
+        for name, value in attrs:
+            if name == 'class' and 'text-' in value:
+                self.font_size = value
+
+        self.mark_color = self.get_style_attr(attrs, 'color')
 
     RE_CCS_SELECTORS = re.compile(r'([^:;\s]+)\s?:\s?([^;\s]+)(?=;)?') 
 
@@ -103,7 +118,12 @@ class HTMLTable2Excel(HTMLParser):
 
         self.mark_color = color
 
-    def handle_span(self, attrs):
+    def handle_skip(self, attrs):
+        for name, value in attrs:
+            if name == 'class' and value == 'skip':
+                self.skip = True
+
+    def handle_colspan(self, attrs):
         rowspan = colspan = None
         for name, value in attrs:
             rowspan = int(value) if name == 'rowspan' else rowspan
@@ -118,6 +138,8 @@ class HTMLTable2Excel(HTMLParser):
             self.spans[self.col] = (rowspan, colspan, 'jump-after-write')
 
     def handle_data(self, data):
+        data = data.strip()
+
         if self.bold:
             self.format['bold'] = 1
 
@@ -134,21 +156,21 @@ class HTMLTable2Excel(HTMLParser):
             self.format['font_color'] = self.mark_color
 
         if self.li:
-            self.set_default_font()
+            self.handle_format()
             self.cell.append(f"\n- {data}")
 
-        elif self.td:
+        elif self.td: 
             if len(data) > 0:
-                self.set_default_font()
                 self.handle_format()
                 self.cell.append(data)
 
-    def handle_format(self):
-        if len(self.format) >= 1:
-            format = self.workbook.add_format(self.format)
-            self.cell.append(format)
-
             self.format = {}
+            # self.font_size = None
+
+    def handle_format(self):
+        self.set_font()
+        format = self.workbook.add_format(self.format)
+        self.cell.append(format)
 
     def handle_charref(self, name):
         if self.parse_html_entities:
@@ -156,13 +178,13 @@ class HTMLTable2Excel(HTMLParser):
 
     def handle_endtag(self, tag):
         if tag == 'tr':
-            self.handle_tr()
+            self.handle_end_tr()
 
         elif tag in ['td', 'th']:
-            self.handle_td()
+            self.handle_end_td()
 
         elif tag in ['ul', 'ol']:
-            self.set_default_font()
+            self.set_font()
             self.cell.append("\n")
 
         elif tag in ['li']:
@@ -184,16 +206,17 @@ class HTMLTable2Excel(HTMLParser):
             self.mark_color = None
 
         elif tag == 'span':
+            self.font_size = None
             self.mark_color = None
 
-    def handle_tr(self):
+    def handle_end_tr(self):
         # Handle colspans followed immediately by </tr>.
         self.perform_jump()
 
         self.row += 1
         self.col = 0
 
-    def handle_td(self):
+    def handle_end_td(self):
         # Handle consecutive colspans.
         rowspan, colspan, jump = self.perform_jump()
 
@@ -206,16 +229,22 @@ class HTMLTable2Excel(HTMLParser):
             )
             self.merged_cells[(self.row, self.col)] = True
             
-            self.write_cell()
+            if not self.skip:
+                self.write_cell()
             self.col += colspan
         else:
             # Process other cells
-            self.write_cell()
+            if not self.skip:
+                self.write_cell()
             self.col += 1
 
         self.td = False
-        self.fill_color = None
+        self.skip = False
+        self.cell = []
         self.format = {}
+        self.font_size = None
+        self.text_align = None
+        self.fill_color = None
 
     def perform_jump(self):
         # Handle successive colspans
@@ -238,6 +267,12 @@ class HTMLTable2Excel(HTMLParser):
 
     def write_cell(self):
         cell_format = self.workbook.add_format(self.default_format)
+
+        if self.text_align:
+            cell_format.set_align(self.text_align)
+            if self.text_align == 'center':
+                cell_format.set_align('vcenter')
+
         if self.fill_color:
             cell_format.set_bg_color(self.fill_color)
 
@@ -258,8 +293,6 @@ class HTMLTable2Excel(HTMLParser):
 
         if res < 0:
             print(f"{res}: {self.cell}\n")
-
-        self.cell = []
 
     def is_merged(self):
         return (self.row, self.col) in self.merged_cells
