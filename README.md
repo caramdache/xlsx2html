@@ -16,7 +16,9 @@ Export an HTLM table to Excel, or export an Excel table to HTML.
 - `<span style="color:red">` (span)
 - `<br>`(break)
 
-## HTML table to Excel (.xlsx)
+# How to use
+
+### HTML table to Excel (.xlsx)
 
 ```
 import xlsxwriter
@@ -39,7 +41,7 @@ p.feed(html)
 workbook.close()
 ```
 
-## Excel (.xlsx) to HTML table
+### Excel (.xlsx) to HTML table
 
 ```
 require 'rubyXL'
@@ -53,7 +55,9 @@ wb.worksheets.each { |ws|
 }
 ```
 
-## Example 1 (rich text)
+## Examples
+
+### Example 1 (rich text)
 
 ```
 <table>
@@ -75,7 +79,7 @@ wb.worksheets.each { |ws|
 
 ![Alt text](example1.png?raw=true "Example 1")
 
-## Example 2 (rowspan and colspan)
+### Example 2 (rowspan and colspan)
 
 ```
 <table>
@@ -91,7 +95,7 @@ wb.worksheets.each { |ws|
 
 ![Alt text](example2.png?raw=true "Example 2")
 
-## Example 3
+### Example 3
 
 ```
 <table class='table table-bordered table-hover table-striped'>
@@ -123,6 +127,3 @@ wb.worksheets.each { |ws|
 
 ![Alt text](example3.png?raw=true "Example 3")
 
-## Credits
-
-html_table2excel was initially inspired by https://github.com/schmijos/html-table-parser-python3.
