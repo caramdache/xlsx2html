@@ -17,7 +17,7 @@ Export an HTLM table to Excel, or export an Excel table to HTML.
 - `<span style="color:red" class="text-big">` 
 - `<br>`
 
-# How to use
+## How to use
 
 ### HTML table to Excel (.xlsx)
 
