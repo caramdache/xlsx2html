@@ -2,7 +2,8 @@
 
 Export an HTLM table to Excel, or export an Excel table to HTML.
 
-Handles:
+## Features at a glance
+
 - `<table>`
 - `<td rowspan="2" colspan="3>`
 - `<td style="background-color:red">` (background color)
