@@ -19,9 +19,9 @@ Export an HTLM table to Excel, or export an Excel table to HTML.
 
 ## How to use
 
-### HTML table to Excel (.xlsx)
+### HTML to XLSX
 
-We rely on ![Alt text](https://xlsxwriter.readthedocs.io/ "XLSXWriter") for code generation.
+We rely on Python's [XLSXWriter](https://xlsxwriter.readthedocs.io/) to generate the XLSX file.
 
 ```
 import xlsxwriter
@@ -44,9 +44,9 @@ p.feed(html)
 workbook.close()
 ```
 
-### Excel (.xlsx) to HTML table
+### XLSX to HTML
 
-There is no support for rich strings in XXX, so we use instead ![Alt text](https://github.com/weshatheleopard/rubyXL "XLSXWriter") for code generation.
+There is no support for rich strings in [openpyxl](https://openpyxl.readthedocs.io/en/stable/), so we use instead [rubyXL](https://github.com/weshatheleopard/rubyXL) instead.
 
 ```
 require 'rubyXL'
