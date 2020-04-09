@@ -1,6 +1,32 @@
 require 'rubyXL'
 require 'rubyXL/convenience_methods'
 
+module RubyXL
+  module ColorConvenienceMethods
+    def get_rgb(workbook)
+      if rgb then
+        return rgb
+      elsif theme then
+        theme_color = workbook.theme.get_theme_color(theme)
+        
+        rgb_color = theme_color && theme_color.a_srgb_clr
+        color_value = rgb_color && rgb_color.val
+
+        # FIX - Handle system colors
+        unless color_value then
+          rgb_color = theme_color && theme_color.a_sys_clr
+          color_value = rgb_color && rgb_color.last_clr
+        end
+        # END FIX
+
+        return nil if color_value.nil?
+
+        RubyXL::RgbColor.parse(color_value).to_hls.apply_tint(tint).to_rgb.to_s
+      end
+    end
+  end
+end
+
 MARKERS = {
     'F79646' => 'marker-orange',
     'E46C0A' => 'marker-orange',
