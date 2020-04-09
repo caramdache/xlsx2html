@@ -5,16 +5,17 @@ Export an HTLM table to Excel, or export an Excel table to HTML.
 ## Features at a glance
 
 - `<table>`
-- `<td rowspan="2" colspan="3>`
-- `<td style="background-color:red">` (background color)
-- `<li>` (list)
-- `<b>` and `<strong>` (bold)
-- `<i>`, `<em>`, `<blockquote>` and `<code>` (italics)
-- `<u>` (underline)
-- `<s>` and `<strike>` (strikethrough)
-- `<mark color="red">` (mark)
-- `<span style="color:red">` (span)
-- `<br>`(break)
+- `<td rowspan="2" colspan="3">`
+- `<td style="background-color:red; text-align:center;">`
+- `<td class="skip">`
+- `<li>`, `<ul>` and `<ol>`
+- `<b>` and `<strong>` 
+- `<i>`, `<em>`, `<blockquote>` and `<code>`
+- `<u>` 
+- `<s>` and `<strike>`
+- `<mark color="red">`
+- `<span style="color:red" class="text-big">` 
+- `<br>`
 
 # How to use
 
