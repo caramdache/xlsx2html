@@ -205,7 +205,6 @@ def cell_to_html(cell, i, j)
     # s << "<span  style='font-size: 8px;'>(#{cell.row}, #{cell.column})</span><br>\n"
 
     s << value_to_html(cell)
-    s << image_to_html(cell)
 
     s << "\n</td>\n"
 end
