@@ -105,17 +105,17 @@ wb.worksheets.each { |ws|
 ```
 <table class='table table-bordered table-hover table-striped'>
   <tr>
-    <th ><p>Main</p></td>
-    <th ><p>Claim</p></td>
-    <th ><p>Text</p></td>
+    <th ><p>Col1</p></td>
+    <th ><p>Col2</p></td>
+    <th ><p>Col3</p></td>
   </tr>
   <tr>
-    <td colspan='1' rowspan='4'><p>Main</p></td>
+    <td colspan='1' rowspan='4'><p>Merged</p></td>
     <td colspan='1' rowspan='4'><p>1</p></td>
-    <td ><p>Essai de texte</p></td>
+    <td ><p>Some text</p></td>
   </tr>
   <tr>
-    <td ><p><b>3.2.1 </b><b><u>Section</u></b></p><p>Essai <mark color='#FF0000'>numéro</mark> <mark color='#00B0F0'>deux</mark></p></td>
+    <td ><p><b>3.2.1 </b><b><u>Section</u></b></p><p>number <mark color='#FF0000'>two</mark> <mark color='#00B0F0'>three</mark></p></td>
   </tr>
   <tr>
     <td ><p>*nil*</p></td>
@@ -130,5 +130,5 @@ wb.worksheets.each { |ws|
 </table>
 ```
 
-![Alt text](example3.png?raw=true "Example 3")
+![Alt text](example4.png?raw=true "Example 3")
 
