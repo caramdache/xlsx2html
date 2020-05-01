@@ -1,12 +1,18 @@
+import re
+
+from html.parser import HTMLParser
+from PIL import Image
+
+
 COLORS = {
     'marker-yellow':     '#fdfd77',
-    'marker-green':      '#63f963',
+    'marker-green':      '#00B050',
     'marker-pink':       '#fc7999',
-    'marker-blue':       '#72cdfd',
+    'marker-blue':       '#0070C0',
 
     'marker-orange':     '#FFC000',
-    'marker-purple':     '#c6a0ff',
-    'marker-brown':      '#bc9a79',
+    'marker-purple':     '#6600FF',
+    'marker-brown':      '#996633',
     'marker-terra-cota': '#999787',
     'marker-brique':     '#cea1a1',
     'marker-red':        '#ff4040',
@@ -15,7 +21,7 @@ COLORS = {
 }
 
 
-class HTMLTable2Excel(HTMLParser):
+class HTML2Excel(HTMLParser):
     def __init__(
         self,
         workbook,
@@ -28,13 +34,11 @@ class HTMLTable2Excel(HTMLParser):
 
         self.workbook = workbook
         self.worksheet = worksheet
+        self.merged_cells = {}
         self.row = 0
         self.col = 0
 
         self.parse_html_entities = decode_html_entities
-
-        self.spans = {}
-        self.merged_cells = {}
 
         self.cell = []
         self.default_format = default_format
@@ -59,7 +63,11 @@ class HTMLTable2Excel(HTMLParser):
             self.format['font_size'] = 20
 
     def handle_starttag(self, tag, attrs):
-        if tag in ['th', 'td']:
+        if tag == 'tr':
+            # Handle colspans from previous rows.
+            self.skip_merged_cells()
+
+        elif tag in ['th', 'td']:
             self.td = True
             self.handle_skip(attrs)
             self.handle_colspan(attrs)
@@ -68,7 +76,7 @@ class HTMLTable2Excel(HTMLParser):
 
         elif tag == 'br':
             self.set_font()
-            self.cell.append("\n")
+            # self.cell.append("\n")
 
         elif tag == 'li':
             self.li = True
@@ -91,8 +99,19 @@ class HTMLTable2Excel(HTMLParser):
         elif tag == 'span':
             self.handle_span(attrs)
 
+        elif tag == 'img':
+            self.handle_image(attrs)
+
+    def handle_image(self, attrs):
+        for name, value in attrs:
+            if name == 'src':
+                path = value.replace("/media/", "")
+
+        self.worksheet.insert_image(self.row, self.col, path)
+
     def handle_span(self, attrs):
         for name, value in attrs:
+            # handle font size such as 'text-big'
             if name == 'class' and 'text-' in value:
                 self.font_size = value
 
@@ -125,6 +144,7 @@ class HTMLTable2Excel(HTMLParser):
 
     def handle_colspan(self, attrs):
         rowspan = colspan = None
+
         for name, value in attrs:
             rowspan = int(value) if name == 'rowspan' else rowspan
             colspan = int(value) if name == 'colspan' else colspan
@@ -135,10 +155,22 @@ class HTMLTable2Excel(HTMLParser):
             rowspan = rowspan or 1
 
         if rowspan or colspan:
-            self.spans[self.col] = (rowspan, colspan, 'jump-after-write')
+            for row in range(0, rowspan):
+                for col in range(0, colspan):
+                    self.merged_cells[(self.row + row, self.col + col)] = True
+
+            del self.merged_cells[(self.row, self.col)]
+
+            #unless rowspan == 1 and colspan == 1:
+            if rowspan != 1 or colspan != 1:
+                self.worksheet.merge_range(
+                    self.row, self.col,
+                    self.row + rowspan - 1, self.col + colspan - 1,
+                    ''
+                )
 
     def handle_data(self, data):
-        data = data.strip()
+        # data = data.strip()
 
         if self.bold:
             self.format['bold'] = 1
@@ -211,32 +243,17 @@ class HTMLTable2Excel(HTMLParser):
 
     def handle_end_tr(self):
         # Handle colspans followed immediately by </tr>.
-        self.perform_jump()
+        self.skip_merged_cells()
 
         self.row += 1
         self.col = 0
 
     def handle_end_td(self):
-        # Handle consecutive colspans.
-        rowspan, colspan, jump = self.perform_jump()
+        if not self.skip:
+            self.write_cell()
+        self.col += 1
 
-        if jump == 'jump-after-write':
-            # Process the cell that starts the rowspan/colspan.
-            self.worksheet.merge_range(
-                self.row, self.col,
-                self.row + rowspan - 1, self.col + colspan - 1,
-                ''
-            )
-            self.merged_cells[(self.row, self.col)] = True
-            
-            if not self.skip:
-                self.write_cell()
-            self.col += colspan
-        else:
-            # Process other cells
-            if not self.skip:
-                self.write_cell()
-            self.col += 1
+        self.skip_merged_cells()
 
         self.td = False
         self.skip = False
@@ -246,24 +263,12 @@ class HTMLTable2Excel(HTMLParser):
         self.text_align = None
         self.fill_color = None
 
-    def perform_jump(self):
-        # Handle successive colspans
-        jump = 'jump-before-write'
-        while jump == 'jump-before-write':
-            rowspan, colspan, jump = self.spans.get(self.col, (None, None, None))
-
-            # Mark this row as processed
-            if rowspan is not None:
-                self.spans[self.col] = (rowspan - 1, colspan, 'jump-before-write')
-                if rowspan == 1:
-                    # All colspans have been performed.
-                    del self.spans[self.col]
-
-            # Skip colspan columns
-            if jump == 'jump-before-write':
-                self.col += colspan
-
-        return (rowspan, colspan, jump)
+    def skip_merged_cells(self):
+        is_merged = True
+        while is_merged:
+            is_merged = self.merged_cells.pop((self.row, self.col), False)
+            if is_merged:
+                self.col += 1
 
     def write_cell(self):
         cell_format = self.workbook.add_format(self.default_format)
@@ -293,6 +298,3 @@ class HTMLTable2Excel(HTMLParser):
 
         if res < 0:
             print(f"{res}: {self.cell}\n")
-
-    def is_merged(self):
-        return (self.row, self.col) in self.merged_cells
