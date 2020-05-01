@@ -25,7 +25,7 @@ We rely on Python's [XLSXWriter](https://xlsxwriter.readthedocs.io/) to generate
 
 ```
 import xlsxwriter
-import html_table2excel.py
+import html2excel.py
 
 workbook = xlsxwriter.Workbook('table.xlsx')
 worksheet = workbook.add_worksheet()
@@ -51,7 +51,7 @@ There is no support for rich strings in [openpyxl](https://openpyxl.readthedocs.
 ```
 require 'rubyXL'
 require 'rubyXL/convenience_methods'
-require './excel2html_table'
+require './excel2html'
 
 wb = RubyXL::Parser.parse('some excel file.xlsx')
 
