@@ -53,7 +53,7 @@ wb.close()
 
 ### XLSX to HTML
 
-There is no support for rich strings in [openpyxl](https://openpyxl.readthedocs.io/en/stable/) today unfortunately, so we use instead [rubyXL](https://github.com/weshatheleopard/rubyXL) instead.
+There is no support for rich strings in [openpyxl](https://openpyxl.readthedocs.io/en/stable/), so we use [rubyXL](https://github.com/weshatheleopard/rubyXL).
 
 ```
 #!/usr/bin/env ruby
@@ -74,8 +74,10 @@ wb.worksheets.each { |ws|
 
 There is a little bit of a conendrum:
 
-- openpyxl does not support rich text, so we use RubyXL instead; however
-- rubyxl does not support images, so we use openpyxl in addition
+- openpyxl does not support rich text, so we use RubyXL; however
+- rubyxl does not support images, so we also need to use openpyxl
+
+Fortunately, `pycall` comes to the rescue and allows us to use Python code inside Ruby.
 
 ```
 #!/usr/bin/env ruby
