@@ -336,20 +336,20 @@ def image_to_html(cell)
 
     ws = cell.worksheet
     ws.images[[cell.row, cell.column]].each_with_index { |img, i|
-        path = ws.image_path
+        path = '.'
         basename = img._id
         ext = img.format
 
-        File.open("#{path}/#{basename}.#{ext}", 'wb', 0666) { |f|
+        File.open("#{path}/#{basename}.#{ext}", 'wb') { |f|
             f.write(img.ref.getvalue())
         }
 
         if ext == 'emf'
-            `cd #{path} && /usr/bin/inkscape -z --export-plain-svg=#{basename}.svg --file #{basename}.#{ext} && rm #{basename}.#{ext}`
+            `/usr/bin/inkscape -z --export-plain-svg=#{basename}.svg --file #{basename}.#{ext} && rm #{basename}.#{ext}`
             ext = 'svg'
         end
 
-        s << "<img src='/media/img/ccs/#{ws.crf}/#{ws.cinc}/#{basename}.#{ext}' style='width:300px;'>"
+        s << "<img src='#{path}/#{basename}.#{ext}' style='width:300px;'>"
     }
 
     s
