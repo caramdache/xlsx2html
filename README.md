@@ -53,7 +53,7 @@ wb.close()
 
 ### XLSX to HTML
 
-There is no support for rich strings in [openpyxl](https://openpyxl.readthedocs.io/en/stable/), so we use [rubyXL](https://github.com/weshatheleopard/rubyXL).
+There is no support for rich strings in [openpyxl](https://openpyxl.readthedocs.io/en/stable/), so we use [rubyXL](https://github.com/weshatheleopard/rubyXL). They are both excellent libraries.
 
 ```
 #!/usr/bin/env ruby
