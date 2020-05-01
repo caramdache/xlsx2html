@@ -1,32 +1,12 @@
+#!/usr/local/bin/ruby
+
 require 'rubyXL'
 require 'rubyXL/convenience_methods'
 
-
-module RubyXL
-  module ColorConvenienceMethods
-    def get_rgb(workbook)
-      if rgb then
-        return rgb
-      elsif theme then
-        theme_color = workbook.theme.get_theme_color(theme)
-        
-        rgb_color = theme_color && theme_color.a_srgb_clr
-        color_value = rgb_color && rgb_color.val
-
-        # FIX - Handle system colors
-        unless color_value then
-          rgb_color = theme_color && theme_color.a_sys_clr
-          color_value = rgb_color && rgb_color.last_clr
-        end
-        # END FIX
-
-        return nil if color_value.nil?
-
-        RubyXL::RgbColor.parse(color_value).to_hls.apply_tint(tint).to_rgb.to_s
-      end
-    end
-  end
-end
+#require 'pycall/import'
+#include PyCall::Import
+#pyimport :openpyxl
+#pyfrom 'openpyxl.drawing.spreadsheet_drawing', import: 'TwoCellAnchor'
 
 
 MARKERS = {
@@ -101,13 +81,76 @@ MARKERS = {
 }
 
 
-def marker(rgb)
-    return nil if rgb.nil?
+# FIX limitation in RubyXL
+module RubyXL
+  module ColorConvenienceMethods
+    def get_rgb(workbook)
+      if rgb then
+        return rgb
+      elsif theme then
+        theme_color = workbook.theme.get_theme_color(theme)
+        
+        rgb_color = theme_color && theme_color.a_srgb_clr
+        color_value = rgb_color && rgb_color.val
 
-    marker = MARKERS[rgb.upcase]
-    puts ">>> marker missing for: #{rgb}" if marker.nil?
-    marker
+        # FIX - Handle system colors
+        unless color_value then
+          rgb_color = theme_color && theme_color.a_sys_clr
+          color_value = rgb_color && rgb_color.last_clr
+        end
+        # END FIX
+
+        return nil if color_value.nil?
+
+        RubyXL::RgbColor.parse(color_value).to_hls.apply_tint(tint).to_rgb.to_s
+      end
+    end
+  end
 end
+
+
+module RubyXL
+  class Worksheet
+    def images
+        @images
+    end
+
+    def images=(array)
+        @images = Hash.new{|h,k| h[k]=[]}
+
+        array.each { |img|
+            # Fix image format (.wmf is not valid, but .emf is)
+            img.format = img.format.gsub(/wmf/i, 'emf')
+
+            from = img.anchor._from
+            to = img.anchor.to if img.anchor.kind_of?(TwoCellAnchor)
+
+            # Images in merged ranges will be ignored, except the ones in the top-left corner.
+            # So we reassign merged images to the top-left cell.
+            self.merged_cells.each { |mcell|
+                row_range, col_range = mcell.ref.row_range, mcell.ref.col_range
+
+                if row_range.member?(from.row) && col_range.member?(from.col)
+                    unless row_range.first == from.row && col_range.first == from.col
+                        # TODO: Use some average, like the barycenter, instead of top-left corner
+                        dr = from.row - row_range.first
+                        dc = from.col - col_range.first
+
+                        from.row -= dr
+                        from.col -= dc
+
+                        to.row -= dr if to
+                        to.col -= dc if to
+                    end
+                end
+            }
+
+            @images[[from.row, from.col]].append(img)
+        }
+    end
+  end
+end
+
 
 def font_color(cell)
     # Instead of convenience method: cell.font_color, which is buggy
@@ -145,6 +188,14 @@ def fill(cell)
     end
 end
 
+def marker(rgb)
+    return nil if rgb.nil?
+
+    marker = MARKERS[rgb.upcase]
+    puts ">>> marker missing for: #{rgb}" if marker.nil?
+    marker
+end
+
 def styles(element)
     {
              b: element && element.b      && (element.b      != false), 
@@ -154,26 +205,26 @@ def styles(element)
     }
 end
 
-def header_to_html
-"""
+def header_to_html()
+    """
 <table>
     <tbody>
 """
 end
 
-def footer_to_html
-"""
+def footer_to_html()
+    """
     </tbody>
 </table>
 """
 end
 
 def worksheet_to_html(worksheet)
-    s = header_to_html
+    s = header_to_html()
 
     s << rows_to_html(worksheet)
 
-    s << footer_to_html
+    s << footer_to_html()
 end
 
 def rows_to_html(worksheet)
@@ -181,32 +232,35 @@ def rows_to_html(worksheet)
 
     worksheet.each_with_index { |row, i|
         unless row.nil?
-            s << "<tr>\n"
+            if row.cells.count > 0
+                s << "<tr>\n"
 
-            row.cells.each_with_index { |cell, j|
-                if cell
-                    s << cell_to_html(cell, i, j) unless omit?(cell)
-                else
-                    s << "<td></td>\n"
-                end
-            }
+                row.cells.each_with_index { |cell, j|
+                    if cell
+                        s << cell_to_html(cell) unless omit?(cell)
+                    else
+                        s << "<td></td>\n"
+                    end
+                }
 
-            s << "</tr>\n"
+                s << "</tr>\n"
+            end
         end
     }
 
     s
 end
 
-def cell_to_html(cell, i, j)
-    s = "<td#{span(cell)}#{fill(cell)}>\n"
+def cell_to_html(cell)
+    s = "<td#{span(cell)}#{fill(cell)}>"
 
     # puts "Cell(#{cell.row}, #{cell.column})"
     # s << "<span  style='font-size: 8px;'>(#{cell.row}, #{cell.column})</span><br>\n"
 
     s << value_to_html(cell)
+    #s << image_to_html(cell)
 
-    s << "\n</td>\n"
+    s << "</td>\n"
 end
 
 def value_to_html(cell)
@@ -245,7 +299,7 @@ def value_to_html(cell)
         end
     end
 
-    s.gsub("\n", "<br>\n")
+    s.gsub("\n", "<br>\n").gsub(/\n( )+/) { |match| "\n#{'&nbsp;' * match.length}"}
 end
 
 def run_to_html(cell, value, color, locals, defaults)
@@ -273,6 +327,30 @@ def run_to_html(cell, value, color, locals, defaults)
     s << '</strike>' if locals[:strike] || defaults[:strike]
 
     locals.each{|k, v| defaults.delete(k) unless v.nil? }
+
+    s
+end
+
+def image_to_html(cell)
+    s = ''
+
+    ws = cell.worksheet
+    ws.images[[cell.row, cell.column]].each_with_index { |img, i|
+        path = ws.image_path
+        basename = img._id
+        ext = img.format
+
+        File.open("#{path}/#{basename}.#{ext}", 'wb', 0666) { |f|
+            f.write(img.ref.getvalue())
+        }
+
+        if ext == 'emf'
+            `cd #{path} && /usr/bin/inkscape -z --export-plain-svg=#{basename}.svg --file #{basename}.#{ext} && rm #{basename}.#{ext}`
+            ext = 'svg'
+        end
+
+        s << "<img src='/media/img/ccs/#{ws.crf}/#{ws.cinc}/#{basename}.#{ext}' style='width:300px;'>"
+    }
 
     s
 end
@@ -308,4 +386,3 @@ def span(cell)
 
     ''
 end
- 
