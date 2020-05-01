@@ -25,24 +25,30 @@ Export an HTLM table to Excel, or export an Excel table to HTML.
 We rely on Python's excellent [XLSXWriter](https://xlsxwriter.readthedocs.io/) to generate the XLSX file.
 
 ```
+#!/usr/bin/env python3
+
 import xlsxwriter
-import html2excel.py
 
-workbook = xlsxwriter.Workbook('table.xlsx')
-worksheet = workbook.add_worksheet()
+with open('html2excel.py') as infile:
+    exec(infile.read())
 
-html = '... some HTML table...'
-p = HTMLTable2Excel(wb, ws, default_format={
+with open('test.html') as input:
+    html = input.read()
+
+wb = xlsxwriter.Workbook('test.xlsx')
+ws = wb.add_worksheet()
+
+p = HTML2Excel(wb, ws, default_format={
     'font_name': 'Arial',
     'font_size': 10,
     'text_wrap': 1,
     'valign': 'top',
     'border': 1,
     'border_color': '#0000ff',
-})                                                                
+})    
 p.feed(html)
 
-workbook.close()
+wb.close()
 ```
 
 ### XLSX to HTML
@@ -50,8 +56,11 @@ workbook.close()
 There is no support for rich strings in [openpyxl](https://openpyxl.readthedocs.io/en/stable/) today unfortunately, so we use instead [rubyXL](https://github.com/weshatheleopard/rubyXL) instead.
 
 ```
+#!/usr/bin/env ruby
+
 require 'rubyXL'
 require 'rubyXL/convenience_methods'
+
 require './excel2html'
 
 wb = RubyXL::Parser.parse('some excel file.xlsx')
