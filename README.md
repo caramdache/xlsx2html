@@ -61,7 +61,7 @@ wb.worksheets.each { |ws|
 }
 ```
 
-#### Support images
+#### Also export images
 
 There is a little bit of a conendrum:
 
@@ -69,6 +69,8 @@ There is a little bit of a conendrum:
 - rubyxl does not support images, so we use openpyxl in addition
 
 ```
+#!/usr/bin/env ruby
+
 require 'rubyXL'
 require 'rubyXL/convenience_methods'
 
@@ -79,14 +81,19 @@ pyfrom 'openpyxl.drawing.spreadsheet_drawing', import: 'TwoCellAnchor'
 
 require './excel2html'
 
-wb = RubyXL::Parser.parse('some excel file.xlsx')
-wb2 = openpyxl.load_workbook('the same excel file.xlsx')
+wb = RubyXL::Parser.parse('test.xlsx')
+wb2 = openpyxl.load_workbook('test.xlsx')
 
 wb.worksheets.each_with_index { |ws, i|
-    # Index images for easier later retrieval
+    # Index images by cell row/col for easier later retrieval
     ws.images = wb2.worksheets[i]._images
     
-    worksheet_to_html(ws)
+    puts ws.sheet_name
+    html = worksheet_to_html(ws)
+
+    File.open("test_#{ws.sheet_name}.html", 'wb') { |f|
+        f.write(html)
+    }
 }
 ``` 
 
