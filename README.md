@@ -63,15 +63,15 @@ wb.worksheets.each { |ws|
 
 #### Support images
 
-The same is sligthly different if you want not just xlsx cell content but also images.
+There is a little bit of a conendrum:
+
+- openpyxl does not support rich text, so we use RubyXL instead; however
+- rubyxl does not support images, so we use openpyxl in addition
 
 ```
 require 'rubyXL'
 require 'rubyXL/convenience_methods'
 
-# There is a little bit of a conendrum:
-#   - openpyxl does not support rich text, so we use RubyXL instead; however
-#   - rubyxl does not support images, so we use openpyxl in addition
 require 'pycall/import'
 include PyCall::Import
 pyimport :openpyxl
