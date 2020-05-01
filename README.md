@@ -61,6 +61,35 @@ wb.worksheets.each { |ws|
 }
 ```
 
+#### Support images
+
+The same is sligthly different if you want not just xlsx cell content but also images.
+
+```
+require 'rubyXL'
+require 'rubyXL/convenience_methods'
+
+# There is a little bit of a conendrum:
+#   - openpyxl does not support rich text, so we use RubyXL instead; however
+#   - rubyxl does not support images, so we use openpyxl in addition
+require 'pycall/import'
+include PyCall::Import
+pyimport :openpyxl
+pyfrom 'openpyxl.drawing.spreadsheet_drawing', import: 'TwoCellAnchor'
+
+require './excel2html'
+
+wb = RubyXL::Parser.parse('some excel file.xlsx')
+wb2 = openpyxl.load_workbook('the same excel file.xlsx')
+
+wb.worksheets.each_with_index { |ws, i|
+    # Index images for easier later retrieval
+    ws.images = wb2.worksheets[i]._images
+    
+    worksheet_to_html(ws)
+}
+``` 
+
 ## Examples
 
 ### Example 1 (rich text)
