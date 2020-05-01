@@ -15,6 +15,7 @@ Export an HTLM table to Excel, or export an Excel table to HTML.
 - `<s>` and `<strike>`
 - `<mark color="red">`
 - `<span style="color:red" class="text-big">` 
+- `<img src="<path">
 - `<br>`
 
 ## How to use
