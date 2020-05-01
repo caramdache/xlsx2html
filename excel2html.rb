@@ -1,12 +1,9 @@
-#!/usr/local/bin/ruby
+#!/usr/bin/env ruby
 
 require 'rubyXL'
 require 'rubyXL/convenience_methods'
 
-#require 'pycall/import'
-#include PyCall::Import
-#pyimport :openpyxl
-#pyfrom 'openpyxl.drawing.spreadsheet_drawing', import: 'TwoCellAnchor'
+require 'securerandom'
 
 
 MARKERS = {
@@ -258,7 +255,10 @@ def cell_to_html(cell)
     # s << "<span  style='font-size: 8px;'>(#{cell.row}, #{cell.column})</span><br>\n"
 
     s << value_to_html(cell)
-    #s << image_to_html(cell)
+
+    if defined?(TwoCellAnchor)
+        s << image_to_html(cell)
+    end
 
     s << "</td>\n"
 end
@@ -337,7 +337,7 @@ def image_to_html(cell)
     ws = cell.worksheet
     ws.images[[cell.row, cell.column]].each_with_index { |img, i|
         path = '.'
-        basename = img._id
+        basename = SecureRandom.uuid #img._id
         ext = img.format
 
         File.open("#{path}/#{basename}.#{ext}", 'wb') { |f|
