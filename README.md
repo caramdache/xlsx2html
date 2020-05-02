@@ -24,7 +24,7 @@ Export an HTLM table to Excel, or export an Excel table to HTML.
 
 We rely on Python's excellent [XLSXWriter](https://xlsxwriter.readthedocs.io/) to generate the XLSX file.
 
-```
+```python
 #!/usr/bin/env python3
 
 import xlsxwriter
@@ -51,11 +51,29 @@ with open('test.html') as input:
 wb.close()
 ```
 
+#### Image scaling
+
+If you text-wrap cells or if you merge cells, your images may be squeezed. In that case, you may use the following workaround.
+
+```python
+import openpyxl
+from xlsxwriter.utility import xl_rowcol_to_cell
+
+wb = openpyxl.load_workbook('test.xlsx')
+ws = wb.active
+
+for row, col, path in image_paths:
+	image = openpyxl.drawing.image.Image(path)
+	ws.add_image(image, xl_rowcol_to_cell(row, col))
+
+wb.save('test.xlsx')
+```
+
 ### XLSX to HTML
 
 There is no support for rich strings in [openpyxl](https://openpyxl.readthedocs.io/en/stable/), so we use [rubyXL](https://github.com/weshatheleopard/rubyXL). They are both excellent libraries.
 
-```
+```ruby
 #!/usr/bin/env ruby
 
 require 'rubyXL'
@@ -79,7 +97,7 @@ There is a little bit of a conendrum:
 
 Fortunately, `pycall` comes to the rescue and allows us to use Python code inside Ruby.
 
-```
+```ruby
 #!/usr/bin/env ruby
 
 require 'rubyXL'
@@ -112,7 +130,7 @@ wb.worksheets.each_with_index { |ws, i|
 
 ### Example 1 (rich text)
 
-```
+```html
 <table>
     <thead>
         <tr>
@@ -134,7 +152,7 @@ wb.worksheets.each_with_index { |ws, i|
 
 ### Example 2 (rowspan and colspan)
 
-```
+```html
 <table>
     <tbody>
         <tr><td>a</td><td>b</td><td>c</td><td>d</td><td>e</td></tr>
@@ -150,7 +168,7 @@ wb.worksheets.each_with_index { |ws, i|
 
 ### Example 3
 
-```
+```html
 <table class='table table-bordered table-hover table-striped'>
   <tr>
     <th ><p>Col1</p></td>
