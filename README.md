@@ -63,8 +63,8 @@ wb = openpyxl.load_workbook('test.xlsx')
 ws = wb.active
 
 for row, col, path in image_paths:
-	image = openpyxl.drawing.image.Image(path)
-	ws.add_image(image, xl_rowcol_to_cell(row, col))
+    image = openpyxl.drawing.image.Image(path)
+    ws.add_image(image, xl_rowcol_to_cell(row, col))
 
 wb.save('test.xlsx')
 ```
