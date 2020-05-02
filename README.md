@@ -53,9 +53,19 @@ wb.close()
 
 #### Image scaling
 
-If you text-wrap cells or if you merge cells, your images may be squeezed. In that case, you may use the following workaround.
+If you text-wrap cells or if you merge cells, your images may be squeezed. In that case, you may use the following workaround:
 
 ```python
+# ... (same as above)
+
+with open('test.html') as input:
+    html = input.read()
+    image_paths = p.feed(html)
+
+wb.close()
+
+# Now switch to a different library to add images with no squeeze
+
 import openpyxl
 from xlsxwriter.utility import xl_rowcol_to_cell
 
