@@ -35,6 +35,7 @@ class HTML2Excel(HTMLParser):
         self.workbook = workbook
         self.worksheet = worksheet
         self.merged_cells = {}
+        self.images = []
         self.row = 0
         self.col = 0
 
@@ -54,6 +55,10 @@ class HTML2Excel(HTMLParser):
         self.li = False
         self.td = False
         self.skip = False
+
+    def feed(self, data):
+        super().feed(data)
+        return self.images
 
     def set_font(self):
         self.format['font_name'] = self.default_format.get('font_name', 'Arial')
@@ -107,6 +112,7 @@ class HTML2Excel(HTMLParser):
             if name == 'src':
                 path = value.replace("/media/", "")
 
+        self.images.append((self.row, self.col, path))
         self.worksheet.insert_image(self.row, self.col, path)
 
     def handle_span(self, attrs):
